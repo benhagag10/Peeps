@@ -100,25 +100,6 @@ function DetailsPanel() {
             {selectedPerson.affiliation && (
               <p className="text-sm text-white/50">{selectedPerson.affiliation}</p>
             )}
-            {selectedPerson.stream && (
-              <span className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
-                bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                {selectedPerson.stream}
-              </span>
-            )}
-            {selectedPerson.interests && selectedPerson.interests.length > 0 && (
-              <div className="mt-3 flex flex-wrap justify-center gap-1.5">
-                {selectedPerson.interests.map((interest) => (
-                  <span
-                    key={interest}
-                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                      bg-pink-500/20 text-pink-300 border border-pink-500/30"
-                  >
-                    {interest}
-                  </span>
-                ))}
-              </div>
-            )}
             {selectedPerson.peeps && (
               <a
                 href={selectedPerson.peeps}
@@ -151,6 +132,39 @@ function DetailsPanel() {
             </button>
           </div>
 
+          {/* Stream & Interests */}
+          {(selectedPerson.stream || (selectedPerson.interests && selectedPerson.interests.length > 0)) && (
+            <div className="p-4 space-y-4 border-b border-white/10">
+              {selectedPerson.stream && (
+                <div>
+                  <label className="text-xs font-medium text-white/40 uppercase tracking-wider">Stream</label>
+                  <div className="mt-2">
+                    <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium
+                      bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                      {selectedPerson.stream}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {selectedPerson.interests && selectedPerson.interests.length > 0 && (
+                <div>
+                  <label className="text-xs font-medium text-white/40 uppercase tracking-wider">Interests</label>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {selectedPerson.interests.map((interest) => (
+                      <span
+                        key={interest}
+                        className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium
+                          bg-pink-500/20 text-pink-300 border border-pink-500/30"
+                      >
+                        {interest}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Connections */}
           <div className="p-4">
             <div className="flex items-center justify-between mb-3">
@@ -177,19 +191,40 @@ function DetailsPanel() {
                   return (
                     <li
                       key={link.id}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10
+                      className="p-3 rounded-xl bg-white/5 hover:bg-white/10
                         cursor-pointer transition-colors border border-white/5"
                       onClick={() => useStore.getState().selectLink(link.id)}
                     >
-                      <span
-                        className="w-2.5 h-2.5 rounded-full"
-                        style={{ backgroundColor: LINK_TYPE_COLORS[link.type] }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-white truncate">
-                          {otherPerson?.name || 'Unknown'}
-                        </p>
-                        <p className="text-xs text-white/50 truncate">{link.description}</p>
+                      <div className="flex items-center gap-3">
+                        {otherPerson?.photoUrl ? (
+                          <img
+                            src={otherPerson.photoUrl}
+                            alt={otherPerson.name}
+                            className="w-8 h-8 rounded-full object-cover ring-1 ring-white/10"
+                          />
+                        ) : (
+                          <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium ring-1 ring-white/10"
+                            style={{ backgroundColor: otherPerson ? getAvatarColor(otherPerson.name) : '#666' }}
+                          >
+                            {otherPerson ? getInitials(otherPerson.name) : '?'}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-white truncate">
+                            {otherPerson?.name || 'Unknown'}
+                          </p>
+                          <p className="text-xs text-white/50 truncate">{link.description}</p>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <span
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: LINK_TYPE_COLORS[link.type] }}
+                        />
+                        <span className="text-xs text-white/40">
+                          {LINK_TYPE_LABELS[link.type]}
+                        </span>
                       </div>
                     </li>
                   );
