@@ -87,13 +87,27 @@ function DetailsPanel() {
   const selectedPerson = selectedPersonId ? getPersonById(selectedPersonId) : undefined;
   const selectedLink = selectedLinkId ? getLinkById(selectedLinkId) : undefined;
 
-  // Get all connections: manual + stream + interest
-  const personLinks = useMemo(() => {
+  // Get all connections grouped by person (no duplicates)
+  const groupedConnections = useMemo(() => {
     if (!selectedPersonId) return [];
+
     const manualLinks = getLinksForPerson(selectedPersonId);
     const streamLinks = getStreamLinksForPerson(selectedPersonId, people);
     const interestLinks = getInterestLinksForPerson(selectedPersonId, people);
-    return [...manualLinks, ...streamLinks, ...interestLinks];
+    const allLinks = [...manualLinks, ...streamLinks, ...interestLinks];
+
+    // Group by the other person's ID
+    const grouped: Record<string, { personId: string; links: Link[] }> = {};
+
+    allLinks.forEach((link) => {
+      const otherPersonId = link.sourceId === selectedPersonId ? link.targetId : link.sourceId;
+      if (!grouped[otherPersonId]) {
+        grouped[otherPersonId] = { personId: otherPersonId, links: [] };
+      }
+      grouped[otherPersonId].links.push(link);
+    });
+
+    return Object.values(grouped);
   }, [selectedPersonId, getLinksForPerson, people]);
 
   const sourcePerson = selectedLink ? getPersonById(selectedLink.sourceId) : undefined;
@@ -237,7 +251,7 @@ function DetailsPanel() {
           <div className="p-4">
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-sm font-medium text-white">
-                Connections ({personLinks.length})
+                Connections ({groupedConnections.length})
               </h4>
               <button
                 onClick={() => openAddLinkModal(selectedPerson.id)}
@@ -247,21 +261,19 @@ function DetailsPanel() {
               </button>
             </div>
 
-            {personLinks.length === 0 ? (
+            {groupedConnections.length === 0 ? (
               <p className="text-sm text-white/40">No connections yet</p>
             ) : (
               <ul className="space-y-2">
-                {personLinks.map((link) => {
-                  const otherPersonId =
-                    link.sourceId === selectedPerson.id ? link.targetId : link.sourceId;
-                  const otherPerson = getPersonById(otherPersonId);
+                {groupedConnections.map(({ personId, links }) => {
+                  const otherPerson = getPersonById(personId);
 
                   return (
                     <li
-                      key={link.id}
+                      key={personId}
                       className="p-3 rounded-xl bg-white/5 hover:bg-white/10
                         cursor-pointer transition-colors border border-white/5"
-                      onClick={() => useStore.getState().selectLink(link.id)}
+                      onClick={() => useStore.getState().selectPerson(personId)}
                     >
                       <div className="flex items-center gap-3">
                         {otherPerson?.photoUrl ? (
@@ -282,17 +294,24 @@ function DetailsPanel() {
                           <p className="text-sm font-medium text-white truncate">
                             {otherPerson?.name || 'Unknown'}
                           </p>
-                          <p className="text-xs text-white/50 truncate">{link.description}</p>
                         </div>
                       </div>
-                      <div className="mt-2 flex items-center gap-2">
-                        <span
-                          className="w-2 h-2 rounded-full"
-                          style={{ backgroundColor: LINK_TYPE_COLORS[link.type] }}
-                        />
-                        <span className="text-xs text-white/40">
-                          {LINK_TYPE_LABELS[link.type]}
-                        </span>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {links.map((link) => (
+                          <span
+                            key={link.id}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs"
+                            style={{
+                              backgroundColor: `${LINK_TYPE_COLORS[link.type]}20`,
+                              color: LINK_TYPE_COLORS[link.type],
+                              border: `1px solid ${LINK_TYPE_COLORS[link.type]}40`,
+                            }}
+                          >
+                            {link.type === 'stream' || link.type === 'interest'
+                              ? link.description
+                              : LINK_TYPE_LABELS[link.type]}
+                          </span>
+                        ))}
                       </div>
                     </li>
                   );
