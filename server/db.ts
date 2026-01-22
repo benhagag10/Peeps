@@ -95,6 +95,22 @@ export function rowToFeatureRequest(row: Record<string, unknown>): {
   };
 }
 
+// Helper to parse affiliations - handles both old string format and new JSON array format
+function parseAffiliations(value: unknown): string[] | undefined {
+  if (!value) return undefined;
+  const str = value as string;
+  // Try parsing as JSON array first
+  try {
+    const parsed = JSON.parse(str);
+    if (Array.isArray(parsed)) return parsed;
+    // If it parsed but isn't an array, wrap it
+    return [String(parsed)];
+  } catch {
+    // Not JSON, treat as a single affiliation string (old format)
+    return [str];
+  }
+}
+
 // Helper to convert database row to Person object
 export function rowToPerson(row: Record<string, unknown>): {
   id: string;
@@ -111,7 +127,7 @@ export function rowToPerson(row: Record<string, unknown>): {
   return {
     id: row.id as string,
     name: row.name as string,
-    affiliations: row.affiliation ? JSON.parse(row.affiliation as string) : undefined,
+    affiliations: parseAffiliations(row.affiliation),
     photoUrl: row.photo_url as string | undefined,
     peeps: row.peeps as string | undefined,
     stream: row.stream as string | undefined,
