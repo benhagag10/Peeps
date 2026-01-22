@@ -20,8 +20,10 @@ function TagInput({ tags, onChange, placeholder = 'Type and press space...', sug
 
   const addTag = useCallback(
     (tag: string) => {
-      const trimmed = tag.trim().toLowerCase();
-      if (trimmed && !tags.includes(trimmed)) {
+      const trimmed = tag.trim();
+      // Check for duplicates case-insensitively
+      const isDuplicate = tags.some((t) => t.toLowerCase() === trimmed.toLowerCase());
+      if (trimmed && !isDuplicate) {
         onChange([...tags, trimmed]);
       }
       setInput('');
